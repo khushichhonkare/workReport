@@ -1,20 +1,23 @@
-export default function generateWorkReport(arr) {
-    const typeMappings = {
-        "fix": "I have fixed",
-        "merge": "I have merged",
-        "refactor": "I have refactored",
-        "feat": "I have added"
-    };
+import generateReportWithGemini from "./generateReportWithGPT.js"
 
-    const formattedSentences = arr.map(sentence => {
-        const [type, description] = sentence.split(':').map(part => part.trim());
-        const action = typeMappings[type] || "Performed";
-        return `${action} ${description}`;
-    });
+export default async function generateWorkReport(arr) {
+    // const typeMappings = {
+    //     "fix": "I have fixed",
+    //     "merge": "I have merged",
+    //     "refactor": "I have refactored",
+    //     "feat": "I have added"
+    // };
 
-    const reportHeader = "Today's Work Report\n";
-    const formattedReport = formattedSentences.join('\n');
-    
-    return `${reportHeader}${formattedReport}`;
-}
+    // const formattedSentences = arr.map(sentence => {
+    // const [type, description] = sentence.split(':').map(part => part.trim());
+    //     const action = typeMappings[type] || "Performed";
+    //     return `${action} ${description}`;
+    // });
+
+    const reportHeader = "create my work report out of these points : Today's Work Report\n";
+    // const formattedReport = formattedSentences.join('\n');
+    const huggingFaceRes = await generateReportWithGemini(`${reportHeader}${arr}`)
+    console.log("huggingFaceRes----->>", huggingFaceRes)
+    return `${huggingFaceRes}`;
+  }
 
