@@ -19,12 +19,7 @@ app.use(passport.session());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-const getData = async ()=>{
-  const data = await GoogleAuths()
-  console.log("DATA",data)
 
-}
-getData()
 // Function to run Git commands
 // const runGitCommand = (command) => 
 //   new Promise((resolve, reject) => {
@@ -70,14 +65,26 @@ getData()
 
 
 app.get('/auth/google', passport.authenticate('google', {
-  scope: ['profile', 'email']
+  scope: [
+    'profile', 
+    'email', 
+    'https://www.googleapis.com/auth/calendar.readonly', // Add this scope
+    'https://www.googleapis.com/auth/calendar.events',
+  ]
 }));
 
+// const getData = async ()=>{
+//   const data = await GoogleAuths(`ya29.a0AXeO80S7x6d9TqVgrgNJoxXH4EiaovQ3kAV6ndqJBhSoWMwDR2F6h2N8FFQhzML_BJqDAhqW_LmL0H9hL6oiA2K3ZHyxtEQJHDhgjR4V8isAh40Gwmlg-HVFfwSTF6xdUkCM_txfN7E1YW4Io-J1AO8jkyYiCayhiws6zNC-0AaCgYKAccSARMSFQHGX2MiHcCtwLKsPHCW2KGbb9aI6Q0177`)
+//   console.log("DATA",data)
 
+// }
+// getData()
 app.get('/callback', 
   passport.authenticate('google', { failureRedirect: '/' }), 
-  (req, res) => {
+ async (req, res) => {
     console.log("req.user", req.user); // req.user will contain the authenticated user's profile
+    // const data = await GoogleAuths(req.user.accessToken)
+    // console.log("DATA",data)
     res.send(req.user); // or any other success route
   }
 );
