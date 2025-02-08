@@ -21,9 +21,10 @@ import axios from "axios";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Copy, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast"
 
 const formatDate = (dateRange: { from: Date; to: Date }) => {
   return {
@@ -34,8 +35,8 @@ const formatDate = (dateRange: { from: Date; to: Date }) => {
 
 const fetchData = async (params: { from: string; to: string }) => {
   console.log("Fetching data with params:", params);
-  // const response = await axios.get("http://localhost:3000/get-report", { params }); // 🔹 Ensure this API exists
-  // return response.data;
+  const response = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/get-report`, { params }); // 🔹 Ensure this API exists
+  return response.data;
   return {
     data: '\n{\n  "Completed tasks": [\n    \n  ],\n  "Fixes": [\n    "setup home page",\n    "removed unused files"\n  ],\n  "Pending": []\n}\n',
   };
@@ -72,10 +73,8 @@ interface FormData {
 export function WorkReportForm({
   className,
 }: React.HTMLAttributes<HTMLDivElement>) {
-
-
-
-  const { handleSubmit, setValue, watch, register} = useForm<FormData>({
+  const { toast } = useToast();
+  const { handleSubmit, setValue, watch, register } = useForm<FormData>({
     defaultValues: {
       dateRange: {
         from: new Date(),
@@ -100,7 +99,7 @@ export function WorkReportForm({
     },
   });
 
-console.log("watch", watch("work_report"));
+  console.log("watch", watch("work_report"));
 
   const date = watch("dateRange");
 
@@ -109,10 +108,26 @@ console.log("watch", watch("work_report"));
     getReport.mutate(formattedData);
   };
 
+
+  const handleCopy = () => {
+    toast({
+      title: "Work Report Copied To Clipboard!!",
+      description: "You can now paste it into your work report sheet.",
+
+    })
+    navigator.clipboard.writeText(watch("work_report"));
+
+ 
+  };
+
+  const handleClear = () => {
+    setValue("work_report", "");
+  };
+
   return (
     <>
       <Card
-        className={`w-[420px] bg-slate-200 text-slate-700 ${className} mb-4`}
+        className={`w-full bg-slate-200 text-slate-700 ${className} mb-4`}
       >
         <CardHeader className="pb-1">
           <CardTitle className="text-center">Work Report</CardTitle>
@@ -179,10 +194,32 @@ console.log("watch", watch("work_report"));
             Your Work Report is Ready to Go!
           </Label>
 
-          <Textarea
-            placeholder="Add your personalized message here..."
-            {...register("work_report")}
-          />
+          <div className="relative">
+            <Textarea
+              placeholder="Add your personalized message here..."
+              {...register("work_report")}
+              className="w-full p-2 border rounded"
+              rows={6}
+            />
+            <div className="absolute right-2 top-2 flex gap-2">
+              <button
+                // disabled={watch("work_report") === ""}
+                onClick={handleCopy}
+                className="p-1  mt-1 hover:bg-gray-100 rounded"
+              >
+
+                <Copy className="h-4 w-4" />
+              </button>
+              <button
+                // disabled={watch("work_report") === ""}
+                onClick={handleClear}
+                className="p-1  mt-1 me-2 hover:bg-gray-100 rounded"
+
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
 
           <p className="text-sm text-muted-foreground">
             Feel free to tweak, copy, and paste it directly into your work

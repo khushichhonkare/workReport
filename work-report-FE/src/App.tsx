@@ -2,11 +2,12 @@ import { Routes, Route } from "react-router-dom"
 import { LoginForm } from "./components/login-form"
 import { WorkReportForm } from "./components/work-report"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
+import { Toaster } from "@/components/ui/toaster"
 export default function App() {
   const queryClient = new QueryClient();
   return (
     <QueryClientProvider client={queryClient}>
+    <Toaster />
     <Routes>
       <Route path="/login" element={
         <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
