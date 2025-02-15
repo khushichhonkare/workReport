@@ -1,6 +1,6 @@
 #Work Report Generator
 
-This project follows a Backend (BE) and Frontend (FE) architecture to manage Google Calendar meetings and generate work reports.
+This project follows a Backend (BE) and Frontend (FE) architecture to manage Google Calendar meetings and Github commit history to generate work reports.
 
 ## Project Structure
 
