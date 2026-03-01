@@ -67,7 +67,7 @@ app.post('/get-repos', async (req, res) => {
 app.post('/get-report', async (req, res) => {
   try {
     const { pat, owner, repo, from, to } = req.body
-
+    console.log('pat, owner, repo, from, to', pat, owner, repo, from, to)
     if (!pat || !owner || !repo) {
       return res
         .status(400)
@@ -100,9 +100,8 @@ app.post('/get-report', async (req, res) => {
         messages.push(`${match[1].toLowerCase()}: ${match[2]}`)
       }
     })
-
     const workReport = await generateWorkReport(messages)
-    return res.json({ data: workReport })
+    return res.json({ data: workReport, rawMessages: messages })
   } catch (err) {
     console.error('Error fetching commits:', err.response?.data || err.message)
     if (err.response?.status === 401) {
