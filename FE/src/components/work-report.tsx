@@ -1,4 +1,4 @@
-"use client";
+'use client'
 import {
   Card,
   CardContent,
@@ -6,160 +6,178 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "../components/ui/calendar";
+} from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { Button } from '@/components/ui/button'
+import { Calendar } from '../components/ui/calendar'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import dayjs from "dayjs";
-import axios, { AxiosError } from "axios";
-import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
-import { format } from "date-fns";
-import { CalendarIcon, Copy, X, Loader2 } from "lucide-react";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
+} from '@/components/ui/popover'
+import dayjs from 'dayjs'
+import axios, { AxiosError } from 'axios'
+import { useMutation } from '@tanstack/react-query'
+import { useState } from 'react'
+import { format } from 'date-fns'
+import { CalendarIcon, Copy, X, Loader2 } from 'lucide-react'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
+import { useToast } from '@/hooks/use-toast'
 
-const GITHUB_PAT_KEY = "github_pat";
+const GITHUB_PAT_KEY = 'github_pat'
 
 interface Repo {
-  name: string;
-  full_name: string;
-  owner: string;
+  name: string
+  full_name: string
+  owner: string
 }
 
 const fetchRepos = async (pat: string) => {
-  const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/get-repos`, { pat });
-  return response.data;
-};
+  const response = await axios.post(
+    `${import.meta.env.VITE_BASE_URL}/get-repos`,
+    { pat },
+  )
+  return response.data
+}
 
-const fetchReport = async (params: { pat: string; owner: string; repo: string; from: string; to: string }) => {
-  const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/get-report`, params);
-  return response.data;
-};
+const fetchReport = async (params: {
+  pat: string
+  owner: string
+  repo: string
+  from: string
+  to: string
+}) => {
+  const response = await axios.post(
+    `${import.meta.env.VITE_BASE_URL}/get-report`,
+    params,
+  )
+  return response.data
+}
 
 const formatReportData = (data: Record<string, string[]>) => {
-  let formattedReport = "";
+  let formattedReport = ''
 
   for (const [heading, points] of Object.entries(data)) {
-    formattedReport += `${heading}:\n`;
+    formattedReport += `${heading}:\n`
 
     if (points.length > 0) {
       points.forEach((point) => {
-        formattedReport += `- ${point}\n`;
-      });
+        formattedReport += `- ${point}\n`
+      })
     } else {
-      formattedReport += "- No tasks assigned\n";
+      formattedReport += '- No tasks assigned\n'
     }
 
-    formattedReport += "\n";
+    formattedReport += '\n'
   }
 
-  return formattedReport.trim();
-};
+  return formattedReport.trim()
+}
 
 export function WorkReportForm({
   className,
 }: React.HTMLAttributes<HTMLDivElement>) {
-  const { toast } = useToast();
-  
-  const [pat, setPat] = useState(() => localStorage.getItem(GITHUB_PAT_KEY) || "");
-  const [repos, setRepos] = useState<Repo[]>([]);
-  const [selectedRepo, setSelectedRepo] = useState<string>("");
+  const { toast } = useToast()
+
+  const [pat, setPat] = useState(
+    () => localStorage.getItem(GITHUB_PAT_KEY) || '',
+  )
+  const [repos, setRepos] = useState<Repo[]>([])
+  const [selectedRepo, setSelectedRepo] = useState<string>('')
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: new Date(),
     to: new Date(),
-  });
-  const [workReport, setWorkReport] = useState("");
-  const [isLoadingRepos, setIsLoadingRepos] = useState(false);
-  const [repoError, setRepoError] = useState("");
+  })
+  const [workReport, setWorkReport] = useState('')
+  const [isLoadingRepos, setIsLoadingRepos] = useState(false)
+  const [repoError, setRepoError] = useState('')
 
   const getRepos = useMutation({
     mutationFn: fetchRepos,
     onSuccess: (data) => {
-      setRepos(data.repos);
-      setRepoError("");
+      setRepos(data.repos)
+      setRepoError('')
       if (data.repos.length > 0) {
-        setSelectedRepo(data.repos[0].full_name);
+        setSelectedRepo(data.repos[0].full_name)
       }
     },
     onError: (error: AxiosError<{ error: string }>) => {
-      setRepoError(error.response?.data?.error || "Failed to fetch repositories");
-      setRepos([]);
-      setSelectedRepo("");
+      setRepoError(
+        error.response?.data?.error || 'Failed to fetch repositories',
+      )
+      setRepos([])
+      setSelectedRepo('')
     },
-  });
+  })
 
   const getReport = useMutation({
     mutationFn: fetchReport,
     onSuccess: (data) => {
-      const parsedData = JSON.parse(data.data);
-      const formattedReport = formatReportData(parsedData);
-      setWorkReport(formattedReport);
+      const parsedData = JSON.parse(data.data)
+      const formattedReport = formatReportData(parsedData)
+      setWorkReport(formattedReport)
     },
     onError: (error: AxiosError<{ error: string }>) => {
       toast({
-        title: "Error",
-        description: error.response?.data?.error || "Failed to generate report",
-        variant: "destructive",
-      });
+        title: 'Error',
+        description: error.response?.data?.error || 'Failed to generate report',
+        variant: 'destructive',
+      })
     },
-  });
+  })
 
   const handlePatChange = (value: string) => {
-    setPat(value);
-    setRepoError("");
-    setRepos([]);
-    setSelectedRepo("");
-  };
+    setPat(value)
+    setRepoError('')
+    setRepos([])
+    setSelectedRepo('')
+  }
 
-  const handlePatBlur = () => {
-    if (pat.trim()) {
-      localStorage.setItem(GITHUB_PAT_KEY, pat);
-      setIsLoadingRepos(true);
-      getRepos.mutate(pat, {
-        onSettled: () => setIsLoadingRepos(false),
-      });
+  const handleLoadRepos = () => {
+    if (!pat.trim()) {
+      setRepoError('Please enter a Personal Access Token')
+      return
     }
-  };
+    localStorage.setItem(GITHUB_PAT_KEY, pat)
+    setIsLoadingRepos(true)
+    getRepos.mutate(pat, {
+      onSettled: () => setIsLoadingRepos(false),
+    })
+  }
 
   const handleGenerateReport = () => {
     if (!pat || !selectedRepo) {
       toast({
-        title: "Error",
-        description: "Please enter PAT and select a repository",
-        variant: "destructive",
-      });
-      return;
+        title: 'Error',
+        description: 'Please enter PAT and select a repository',
+        variant: 'destructive',
+      })
+      return
     }
 
-    const [owner, repo] = selectedRepo.split("/");
+    const [owner, repo] = selectedRepo.split('/')
     getReport.mutate({
       pat,
       owner,
       repo,
-      from: dayjs(dateRange.from).format("YYYY-MM-DD"),
-      to: dayjs(dateRange.to).format("YYYY-MM-DD"),
-    });
-  };
+      from: dayjs(dateRange.from).format('YYYY-MM-DD'),
+      to: dayjs(dateRange.to).format('YYYY-MM-DD'),
+    })
+  }
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(workReport);
+    navigator.clipboard.writeText(workReport)
     toast({
-      title: "Copied!",
-      description: "Work report copied to clipboard",
-    });
-  };
+      title: 'Copied!',
+      description: 'Work report copied to clipboard',
+    })
+  }
 
   const handleClear = () => {
-    setWorkReport("");
-  };
+    setWorkReport('')
+  }
 
   return (
     <>
@@ -177,22 +195,31 @@ export function WorkReportForm({
             <div className="flex gap-2">
               <Input
                 id="pat"
-                type="password"
+                // type="password"
                 placeholder="ghp_xxxx..."
                 value={pat}
                 onChange={(e) => handlePatChange(e.target.value)}
-                onBlur={handlePatBlur}
                 className="flex-1"
               />
+              <Button
+                onClick={handleLoadRepos}
+                disabled={isLoadingRepos || !pat.trim()}
+                className="shrink-0"
+              >
+                {isLoadingRepos ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Load'
+                )}
+              </Button>
             </div>
             {isLoadingRepos && (
               <p className="text-sm text-slate-500 flex items-center gap-1">
-                <Loader2 className="h-3 w-3 animate-spin" /> Loading repositories...
+                <Loader2 className="h-3 w-3 animate-spin" /> Loading
+                repositories...
               </p>
             )}
-            {repoError && (
-              <p className="text-sm text-red-500">{repoError}</p>
-            )}
+            {repoError && <p className="text-sm text-red-500">{repoError}</p>}
           </div>
 
           {repos.length > 0 && (
@@ -227,11 +254,11 @@ export function WorkReportForm({
                     {dateRange?.from ? (
                       dateRange.to ? (
                         <>
-                          {format(dateRange.from, "LLL dd, y")} -{" "}
-                          {format(dateRange.to, "LLL dd, y")}
+                          {format(dateRange.from, 'LLL dd, y')} -{' '}
+                          {format(dateRange.to, 'LLL dd, y')}
                         </>
                       ) : (
-                        format(dateRange.from, "LLL dd, y")
+                        format(dateRange.from, 'LLL dd, y')
                       )
                     ) : (
                       <span>Pick a date range</span>
@@ -244,7 +271,9 @@ export function WorkReportForm({
                     mode="range"
                     defaultMonth={dateRange?.from}
                     selected={dateRange}
-                    onSelect={(range) => range && setDateRange(range as { from: Date; to: Date })}
+                    onSelect={(range) =>
+                      range && setDateRange(range as { from: Date; to: Date })
+                    }
                     numberOfMonths={2}
                   />
                 </PopoverContent>
@@ -258,7 +287,7 @@ export function WorkReportForm({
               variant="outline"
               className="w-full"
               onClick={() => {
-                setWorkReport("");
+                setWorkReport('')
               }}
             >
               Clear
@@ -274,7 +303,7 @@ export function WorkReportForm({
                   Generating...
                 </>
               ) : (
-                "Generate Report"
+                'Generate Report'
               )}
             </Button>
           </CardFooter>
@@ -317,5 +346,5 @@ export function WorkReportForm({
         </div>
       )}
     </>
-  );
+  )
 }
