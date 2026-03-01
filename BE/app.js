@@ -36,7 +36,6 @@ app.post('/get-repos', async (req, res) => {
         .status(400)
         .json({ error: 'Personal Access Token is required' })
     }
-    console.log('pat', pat)
     const response = await axios.get('https://api.github.com/user/repos', {
       headers: {
         Authorization: `Bearer ${pat}`,
@@ -67,7 +66,6 @@ app.post('/get-repos', async (req, res) => {
 app.post('/get-report', async (req, res) => {
   try {
     const { pat, owner, repo, from, to } = req.body
-    console.log('pat, owner, repo, from, to', pat, owner, repo, from, to)
     if (!pat || !owner || !repo) {
       return res
         .status(400)
