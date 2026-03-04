@@ -124,7 +124,6 @@ app.post('/get-report', optionalAuth, async (req, res) => {
     })
 
     let meetingsSummaries = []
-    console.log(meetingsSummaries, meetingsSummaries)
     if (req.userId) {
       try {
         const user = await User.findById(req.userId)

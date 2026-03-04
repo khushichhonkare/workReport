@@ -34,17 +34,7 @@ export async function getCurrentUser(req, res) {
     if (!user) {
       return res.status(404).json({ error: 'User not found' })
     }
-
-    console.log('User tokens debug:', {
-      hasAccessToken: !!user.accessToken,
-      hasRefreshToken: !!user.refreshToken,
-      accessTokenLength: user.accessToken?.length,
-      refreshTokenLength: user.refreshToken?.length,
-    })
-
     const isConnected = user.hasValidTokens()
-
-    console.log('isConnected result:', isConnected)
 
     res.json({
       user: {
@@ -61,7 +51,7 @@ export async function getCurrentUser(req, res) {
   }
 }
 
-export async function logout(req, res) {
+export async function logout(res) {
   try {
     res.clearCookie('token', {
       httpOnly: true,
