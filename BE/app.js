@@ -1,31 +1,53 @@
+import 'dotenv/config';
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
-import generateWorkReport from './generateWorkReport.js'
+import passport from 'passport'
+import cookieParser from 'cookie-parser'
 import session from 'express-session'
 import axios from 'axios'
 
-dotenv.config()
+import connectDB from './src/config/database.js'
+import configurePassport from './src/config/passport.js'
+import generateWorkReport from './generateWorkReport.js'
+
+import authRoutes from './src/routes/auth.js'
+import calendarRoutes from './src/routes/calendar.js'
 
 const app = express()
 
+connectDB()
+
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
     credentials: true,
   }),
 )
 
+app.use(cookieParser())
+
 app.use(
   session({
     resave: false,
-    saveUninitialized: true,
-    secret: 'abc',
+    saveUninitialized: false,
+    secret: process.env.JWT_SECRET || 'abc',
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000,
+    },
   }),
 )
 
+app.use(passport.initialize())
+app.use(passport.session())
+
+configurePassport(passport)
+
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
+
+app.use('/auth', authRoutes)
+app.use('/api/calendar', calendarRoutes)
 
 app.post('/get-repos', async (req, res) => {
   try {
@@ -39,7 +61,6 @@ app.post('/get-repos', async (req, res) => {
     const response = await axios.get('https://api.github.com/user/repos', {
       headers: {
         Authorization: `Bearer ${pat}`,
-        // Accept: 'application/vnd.github.v3+json',
       },
       params: {
         sort: 'updated',
@@ -112,8 +133,10 @@ app.post('/get-report', async (req, res) => {
   }
 })
 
-app.listen(3000, () => {
-  console.log('Server activated at 3000')
+const PORT = process.env.PORT || 3000
+
+app.listen(PORT, () => {
+  console.log(`Server activated at ${PORT}`)
 })
 
 export default app
