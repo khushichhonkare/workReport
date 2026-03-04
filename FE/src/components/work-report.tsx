@@ -16,12 +16,25 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { Skeleton } from '@/components/ui/skeleton'
 import dayjs from 'dayjs'
 import axios, { AxiosError } from 'axios'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { CalendarIcon, Copy, X, Loader2, GitBranch, Sparkles } from 'lucide-react'
+import { CalendarIcon, Copy, X, Loader2, GitBranch, Sparkles, Check, Github } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
@@ -97,6 +110,7 @@ export function WorkReportForm({
   const [workReport, setWorkReport] = useState('')
   const [isLoadingRepos, setIsLoadingRepos] = useState(false)
   const [repoError, setRepoError] = useState('')
+  const [copied, setCopied] = useState(false)
 
   const getRepos = useMutation({
     mutationFn: fetchRepos,
@@ -179,10 +193,12 @@ export function WorkReportForm({
 
   const handleCopy = () => {
     navigator.clipboard.writeText(workReport)
+    setCopied(true)
     toast({
       title: 'Copied!',
       description: 'Work report copied to clipboard',
     })
+    setTimeout(() => setCopied(false), 2000)
   }
 
   const handleClear = () => {
@@ -191,47 +207,50 @@ export function WorkReportForm({
 
   return (
     <div className="space-y-6">
-      <Card className={`border-0 shadow-lg bg-white/80 backdrop-blur-sm ${className}`}>
+      <Card className={`glass border-border/50 shadow-xl ${className}`}>
         <CardHeader className="pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+            <div className="p-2.5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg shadow-blue-500/25">
               <GitBranch className="h-5 w-5 text-white" />
             </div>
             <div>
               <CardTitle className="text-xl">Work Report Generator</CardTitle>
-              <CardDescription className="text-slate-500">
+              <CardDescription>
                 Generate professional reports from your GitHub commits
               </CardDescription>
             </div>
           </div>
           {isConnected && (
-            <div className="mt-4 flex items-center gap-2 px-1">
+            <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
               <Sparkles className="h-4 w-4 text-green-500" />
-              <span className="text-sm text-green-600 font-medium">
+              <span className="text-sm text-green-600 dark:text-green-400 font-medium">
                 Calendar connected - meetings will be included
               </span>
             </div>
           )}
         </CardHeader>
-        <Separator className="bg-slate-100" />
+        <Separator className="bg-border/50" />
         <CardContent className="pt-6 space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="pat" className="text-sm font-medium text-slate-700">
+            <Label htmlFor="pat" className="text-sm font-medium">
               GitHub Personal Access Token
             </Label>
             <div className="flex gap-2">
-              <Input
-                id="pat"
-                type="password"
-                placeholder="ghp_xxxx..."
-                value={pat}
-                onChange={(e) => handlePatChange(e.target.value)}
-                className="flex-1 bg-slate-50/50 border-slate-200 focus:border-blue-400 focus:ring-blue-400"
-              />
+              <div className="relative flex-1">
+                <Github className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="pat"
+                  type="password"
+                  placeholder="ghp_xxxx..."
+                  value={pat}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePatChange(e.target.value)}
+                  className="pl-10 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/25 transition-all"
+                />
+              </div>
               <Button
                 onClick={handleLoadRepos}
                 disabled={isLoadingRepos || !pat.trim()}
-                className="px-6 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 shadow-md"
+                className="px-6 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
                 {isLoadingRepos ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -241,41 +260,41 @@ export function WorkReportForm({
               </Button>
             </div>
             {isLoadingRepos && (
-              <p className="text-sm text-slate-400 flex items-center gap-2">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Loading repositories...
-              </p>
+              <div className="space-y-2 mt-3">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-3/4" />
+              </div>
             )}
             {repoError && (
-              <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-md">
+              <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md border border-destructive/20">
                 {repoError}
               </p>
             )}
           </div>
 
-          {repos.length > 0 && (
-            <div className="space-y-2 animate-in fade-in duration-300">
-              <Label htmlFor="repo" className="text-sm font-medium text-slate-700">
+          {repos.length > 0 && !isLoadingRepos && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <Label htmlFor="repo" className="text-sm font-medium">
                 Select Repository
               </Label>
-              <select
-                id="repo"
-                value={selectedRepo}
-                onChange={(e) => setSelectedRepo(e.target.value)}
-                className="w-full h-11 rounded-lg border-slate-200 bg-slate-50/50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
-              >
-                {repos.map((repo) => (
-                  <option key={repo.full_name} value={repo.full_name}>
-                    {repo.full_name}
-                  </option>
-                ))}
-              </select>
+              <Select value={selectedRepo} onValueChange={setSelectedRepo}>
+                <SelectTrigger className="bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/25">
+                  <SelectValue placeholder="Select a repository" />
+                </SelectTrigger>
+                <SelectContent>
+                  {repos.map((repo) => (
+                    <SelectItem key={repo.full_name} value={repo.full_name}>
+                      {repo.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
 
-          {repos.length > 0 && (
-            <div className="space-y-2 animate-in fade-in duration-300">
-              <Label className="text-sm font-medium text-slate-700">
+          {repos.length > 0 && !isLoadingRepos && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <Label className="text-sm font-medium">
                 Date Range
               </Label>
               <Popover>
@@ -283,10 +302,10 @@ export function WorkReportForm({
                   <Button
                     id="date"
                     variant="outline"
-                    className="w-full justify-between bg-slate-50/50 border-slate-200 hover:bg-slate-100 text-slate-700 font-normal"
+                    className="w-full justify-between bg-background/50 border-border/50 hover:bg-accent/50 font-normal transition-all"
                   >
-                    <CalendarIcon className="h-4 w-4 text-slate-500" />
-                    <span>
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-foreground">
                       {dateRange?.from ? (
                         dateRange.to ? (
                           <>
@@ -296,7 +315,7 @@ export function WorkReportForm({
                           format(dateRange.from, 'MMM dd, yyyy')
                         )
                       ) : (
-                        'Select date range'
+                        <span className="text-muted-foreground">Select date range</span>
                       )}
                     </span>
                   </Button>
@@ -323,13 +342,13 @@ export function WorkReportForm({
             <div className="flex gap-3 w-full">
               <Button
                 variant="outline"
-                className="flex-1 border-slate-200 hover:bg-slate-100"
+                className="flex-1 border-border/50 hover:bg-accent/50 transition-all"
                 onClick={() => setWorkReport('')}
               >
                 Clear
               </Button>
               <Button
-                className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 shadow-lg"
+                className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 onClick={handleGenerateReport}
                 disabled={getReport.isPending}
               >
@@ -351,43 +370,57 @@ export function WorkReportForm({
       </Card>
 
       {workReport && (
-        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm animate-in fade-in duration-300">
+        <Card className="glass border-border/50 shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-lg text-slate-800">Your Work Report</CardTitle>
-                <CardDescription className="text-slate-500">
+                <CardTitle className="text-lg">Your Work Report</CardTitle>
+                <CardDescription>
                   Ready to copy and paste
                 </CardDescription>
               </div>
               <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCopy}
-                  className="text-slate-600 hover:text-blue-600 hover:bg-blue-50"
-                >
-                  <Copy className="h-4 w-4 mr-1" />
-                  Copy
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleClear}
-                  className="text-slate-600 hover:text-red-600 hover:bg-red-50"
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  Clear
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCopy}
+                      className={`text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all ${copied ? 'animate-pulse-success text-green-500' : ''}`}
+                    >
+                      {copied ? (
+                        <Check className="h-4 w-4 mr-1" />
+                      ) : (
+                        <Copy className="h-4 w-4 mr-1" />
+                      )}
+                      {copied ? 'Copied!' : 'Copy'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Copy to clipboard</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClear}
+                      className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Clear
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Clear report</TooltipContent>
+                </Tooltip>
               </div>
             </div>
           </CardHeader>
-          <Separator className="bg-slate-100" />
+          <Separator className="bg-border/50" />
           <CardContent className="pt-4">
             <Textarea
               value={workReport}
-              onChange={(e) => setWorkReport(e.target.value)}
-              className="w-full min-h-[200px] bg-slate-50/50 border-slate-200 focus:border-blue-400 focus:ring-blue-400 rounded-lg p-4 text-sm font-mono"
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setWorkReport(e.target.value)}
+              className="w-full min-h-[200px] bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/25 rounded-lg p-4 text-sm font-mono resize-none transition-all"
               placeholder="Your generated report will appear here..."
             />
           </CardContent>

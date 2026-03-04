@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from 'mongoose'
 
 const userSchema = new mongoose.Schema(
   {
@@ -31,18 +31,18 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
-);
+  },
+)
 
 userSchema.methods.isTokenExpired = function () {
-  if (!this.tokenExpiry) return true;
-  return new Date() >= this.tokenExpiry;
-};
+  if (!this.tokenExpiry) return true
+  return new Date() >= this.tokenExpiry
+}
 
 userSchema.methods.hasValidTokens = function () {
-  return !!(this.accessToken && this.refreshToken);
-};
+  return !!(this.accessToken || this.refreshToken)
+}
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema)
 
-export default User;
+export default User
