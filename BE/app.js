@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import passport from 'passport'
@@ -12,6 +12,9 @@ import generateWorkReport from './generateWorkReport.js'
 
 import authRoutes from './src/routes/auth.js'
 import calendarRoutes from './src/routes/calendar.js'
+import { optionalAuth } from './src/middleware/auth.js'
+import User from './src/models/User.js'
+import { getEventsForDateRange } from './src/services/calendarService.js'
 
 const app = express()
 
@@ -84,7 +87,7 @@ app.post('/get-repos', async (req, res) => {
   }
 })
 
-app.post('/get-report', async (req, res) => {
+app.post('/get-report', optionalAuth, async (req, res) => {
   try {
     const { pat, owner, repo, from, to } = req.body
     if (!pat || !owner || !repo) {
@@ -119,8 +122,27 @@ app.post('/get-report', async (req, res) => {
         messages.push(`${match[1].toLowerCase()}: ${match[2]}`)
       }
     })
-    const workReport = await generateWorkReport(messages)
-    return res.json({ data: workReport, rawMessages: messages })
+
+    let meetingsSummaries = []
+    console.log(meetingsSummaries, meetingsSummaries)
+    if (req.userId) {
+      try {
+        const user = await User.findById(req.userId)
+        if (user && user.hasValidTokens()) {
+          const events = await getEventsForDateRange(user, from, to)
+          meetingsSummaries = events.map((e) => e.summary)
+        }
+      } catch (err) {
+        console.error('Error fetching calendar events:', err.message)
+      }
+    }
+
+    const workReport = await generateWorkReport(messages, meetingsSummaries)
+    return res.json({
+      data: workReport,
+      rawMessages: messages,
+      meetings: meetingsSummaries,
+    })
   } catch (err) {
     console.error('Error fetching commits:', err.response?.data || err.message)
     if (err.response?.status === 401) {

@@ -118,6 +118,12 @@ export function WorkReportForm({
       const parsedData = JSON.parse(data.data)
       const formattedReport = formatReportData(parsedData)
       setWorkReport(formattedReport)
+      if (data.meetingsIncluded && data.rawMessages?.meetings) {
+        toast({
+          title: 'Success',
+          description: `Report generated with ${data.rawMessages.meetings.length} calendar meetings included`,
+        })
+      }
     },
     onError: (error: AxiosError<{ error: string }>) => {
       toast({

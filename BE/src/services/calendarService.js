@@ -97,6 +97,54 @@ export async function getUpcomingEvents(user) {
   return formattedEvents;
 }
 
+export async function getEventsForDateRange(user, fromDate, toDate) {
+  const calendar = await getCalendarClient(user);
+
+  const response = await calendar.events.list({
+    calendarId: 'primary',
+    timeMin: new Date(fromDate).toISOString(),
+    timeMax: new Date(toDate).toISOString(),
+    maxResults: 100,
+    singleEvents: true,
+    orderBy: 'startTime',
+  });
+
+  const events = response.data.items || [];
+
+  const filteredEvents = events.filter((event) => {
+    const hasAttendees = event.attendees && event.attendees.length > 0;
+    const hasConferenceData = event.conferenceData;
+    return hasAttendees || hasConferenceData;
+  });
+
+  const formattedEvents = filteredEvents.map((event) => {
+    let meetLink = null;
+    if (event.conferenceData?.entryPoints) {
+      const meetEntry = event.conferenceData.entryPoints.find(
+        (entry) => entry.entryPointType === 'video'
+      );
+      meetLink = meetEntry?.uri || null;
+    }
+
+    return {
+      id: event.id,
+      summary: event.summary || 'No title',
+      start: event.start,
+      end: event.end,
+      attendees: event.attendees
+        ? event.attendees.map((a) => ({
+            email: a.email,
+            displayName: a.displayName,
+            responseStatus: a.responseStatus,
+          }))
+        : [],
+      meetLink,
+    };
+  });
+
+  return formattedEvents;
+}
+
 export async function revokeGoogleAccess(user) {
   try {
     oauth2Client.setCredentials({
