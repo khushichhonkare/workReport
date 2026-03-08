@@ -22,12 +22,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(response.user)
     } catch {
       setUser(null)
+      localStorage.removeItem('auth_token')
     }
   }
 
   useEffect(() => {
     const initAuth = async () => {
       setIsLoading(true)
+      
+      // Check for token in URL (from OAuth callback)
+      const urlParams = new URLSearchParams(window.location.search)
+      const tokenFromUrl = urlParams.get('token')
+      
+      if (tokenFromUrl) {
+        // Store token and clean URL
+        localStorage.setItem('auth_token', tokenFromUrl)
+        window.history.replaceState({}, '', window.location.pathname)
+      }
+      
       await refreshUser()
       setIsLoading(false)
     }
@@ -44,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await apiLogout()
       setUser(null)
+      localStorage.removeItem('auth_token')
     } catch (error) {
       console.error('Logout error:', error)
     }
