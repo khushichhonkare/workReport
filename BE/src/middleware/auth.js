@@ -30,20 +30,6 @@ export async function authMiddleware(req, res, next) {
   }
 }
 
-    const decoded = verifyToken(token);
-
-    if (!decoded) {
-      return res.status(401).json({ error: 'Invalid or expired token' });
-    }
-
-    req.userId = decoded.userId;
-    next();
-  } catch (error) {
-    console.error('Auth middleware error:', error);
-    return res.status(401).json({ error: 'Authentication failed' });
-  }
-}
-
 export function optionalAuth(req, res, next) {
   // Try to get token from cookie first, then from Authorization header
   let token = req.cookies?.token
@@ -63,8 +49,4 @@ export function optionalAuth(req, res, next) {
   }
 
   next()
-}
-  }
-
-  next();
 }
