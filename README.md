@@ -14,22 +14,8 @@ Work Report Generator streamlines the process of creating work reports by:
 
 ### Backend
 - **Node.js** with Express.js
-- **MongoDB** with Mongoose
-- **Google OAuth 2.0** authentication
-- **Google Calendar API** integration
-- **GitHub API** integration
-- **Google Gemini AI** for report generation
-- **JWT** for session management
-- **Encryption** for secure token storage
-
-### Frontend
 - **React 18** with TypeScript
-- **Vite** for fast development and building
-- **Tailwind CSS** for styling
-- **shadcn/ui** component library
-- **React Query** for data fetching
-- **React Hook Form** with Zod validation
-- **date-fns** for date manipulation
+- **MongoDB** with Mongoose
 
 ## Features
 
@@ -60,67 +46,7 @@ Work Report Generator streamlines the process of creating work reports by:
   - Secure API key management
   - Session-based authentication
 
-## Project Structure
 
-```
-workReport/
-├── BE/                          # Backend
-│   ├── src/
-│   │   ├── config/             # Configuration files
-│   │   │   ├── database.js     # MongoDB connection
-│   │   │   ├── passport.js     # OAuth configuration
-│   │   │   ├── jwt.js          # JWT config
-│   │   │   └── gemini.js       # Gemini AI config
-│   │   ├── controllers/        # Request handlers
-│   │   │   ├── authController.js
-│   │   │   └── calendarController.js
-│   │   ├── middleware/         # Express middleware
-│   │   │   └── auth.js         # Authentication middleware
-│   │   ├── models/             # MongoDB models
-│   │   │   └── User.js         # User schema
-│   │   ├── routes/             # API routes
-│   │   │   ├── auth.js         # Authentication routes
-│   │   │   ├── calendar.js     # Calendar routes
-│   │   │   └── github.js       # GitHub token routes
-│   │   ├── services/           # Business logic
-│   │   │   └── calendarService.js
-│   │   └── utils/              # Utility functions
-│   │       └── encryption.js   # Token encryption
-│   ├── app.js                  # Express app entry point
-│   ├── generateWorkReport.js   # Report generation logic
-│   ├── generateReportWithGemini.js  # Gemini AI integration
-│   ├── credentials.json        # Google API credentials
-│   ├── .env.example            # Environment variables template
-│   └── package.json
-│
-└── FE/                          # Frontend
-    ├── src/
-    │   ├── components/         # React components
-    │   │   ├── ui/            # shadcn/ui components
-    │   │   ├── work-report.tsx         # Report generator
-    │   │   ├── CalendarEvents.tsx      # Calendar display
-    │   │   └── GeminiKeyModal.tsx      # API key modal
-    │   ├── contexts/           # React contexts
-    │   │   ├── AuthContext.tsx         # Authentication state
-    │   │   └── ThemeContext.tsx        # Theme management
-    │   ├── services/           # API services
-    │   │   └── api.ts          # Axios API client
-    │   ├── hooks/              # Custom hooks
-    │   │   └── use-toast.ts    # Toast notifications
-    │   ├── lib/                # Utilities
-    │   │   └── utils.ts        # Helper functions
-    │   ├── App.tsx             # Main app component
-    │   ├── main.tsx            # Entry point
-    │   └── index.css           # Global styles
-    ├── public/                 # Static files
-    ├── .env.example            # Environment variables template
-    ├── vite.config.ts          # Vite configuration
-    ├── tailwind.config.js      # Tailwind configuration
-    ├── tsconfig.json           # TypeScript config
-    └── package.json
-```
-
-## Installation & Setup
 
 ### Prerequisites
 - Node.js (v16 or higher)
@@ -145,7 +71,7 @@ workReport/
    ```bash
    cp .env.example .env
    ```
-   
+
    Edit `.env` with your credentials:
    ```env
    GOOGLE_API_KEY=your_google_api_key
@@ -195,7 +121,7 @@ workReport/
    ```bash
    cp .env.example .env
    ```
-   
+
    Edit `.env`:
    ```env
    VITE_BASE_URL=http://localhost:3000
