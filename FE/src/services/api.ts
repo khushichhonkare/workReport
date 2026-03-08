@@ -45,6 +45,16 @@ export interface UserResponse {
   user: User
 }
 
+export interface GitHubTokenResponse {
+  hasToken: boolean
+  pat: string | null
+}
+
+export interface SaveTokenResponse {
+  success: boolean
+  message: string
+}
+
 export const getCurrentUser = async (): Promise<UserResponse> => {
   const response = await api.get<UserResponse>('/auth/me')
   return response.data
@@ -65,6 +75,21 @@ export const disconnectCalendar = async (): Promise<void> => {
 
 export const getGoogleAuthUrl = (): string => {
   return `${import.meta.env.VITE_BASE_URL}/auth/google`
+}
+
+export const getGitHubToken = async (): Promise<GitHubTokenResponse> => {
+  const response = await api.get<GitHubTokenResponse>('/api/github/token')
+  return response.data
+}
+
+export const saveGitHubToken = async (pat: string): Promise<SaveTokenResponse> => {
+  const response = await api.post<SaveTokenResponse>('/api/github/token', { pat })
+  return response.data
+}
+
+export const deleteGitHubToken = async (): Promise<SaveTokenResponse> => {
+  const response = await api.delete<SaveTokenResponse>('/api/github/token')
+  return response.data
 }
 
 export default api

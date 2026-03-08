@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema(
     tokenExpiry: {
       type: Date,
     },
+    githubPat: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
