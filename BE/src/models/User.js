@@ -28,6 +28,14 @@ const userSchema = new mongoose.Schema(
     tokenExpiry: {
       type: Date,
     },
+    geminiApiKey: {
+      type: String,
+      default: null,
+    },
+    geminiApiKey: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

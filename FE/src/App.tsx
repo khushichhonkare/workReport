@@ -1,11 +1,22 @@
 import { WorkReportForm } from './components/work-report'
 import { CalendarEvents } from './components/CalendarEvents'
+import { useState, useEffect } from 'react'
+import { GeminiKeyModal } from './components/GeminiKeyModal'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/toaster'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { Loader2, Moon, Sun, Monitor } from 'lucide-react'
+import { getGeminiToken } from '@/services/api'
+import {
+  Loader2,
+  Moon,
+  Sun,
+  Monitor,
+  LogOut,
+  User as UserIcon,
+  Settings,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -32,15 +43,24 @@ function ThemeToggle() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme('light')} className={theme === 'light' ? 'bg-accent' : ''}>
+        <DropdownMenuItem
+          onClick={() => setTheme('light')}
+          className={theme === 'light' ? 'bg-accent' : ''}
+        >
           <Sun className="mr-2 h-4 w-4" />
           Light
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('dark')} className={theme === 'dark' ? 'bg-accent' : ''}>
+        <DropdownMenuItem
+          onClick={() => setTheme('dark')}
+          className={theme === 'dark' ? 'bg-accent' : ''}
+        >
           <Moon className="mr-2 h-4 w-4" />
           Dark
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('system')} className={theme === 'system' ? 'bg-accent' : ''}>
+        <DropdownMenuItem
+          onClick={() => setTheme('system')}
+          className={theme === 'system' ? 'bg-accent' : ''}
+        >
           <Monitor className="mr-2 h-4 w-4" />
           System
         </DropdownMenuItem>
@@ -51,8 +71,41 @@ function ThemeToggle() {
 
 function AppContent() {
   const { user, isLoading, logout } = useAuth()
+  const [geminiModalOpen, setGeminiModalOpen] = useState(false)
+  const [hasGeminiKey, setHasGeminiKey] = useState<boolean | null>(null)
+  const [isCheckingKey, setIsCheckingKey] = useState(true)
 
-  if (isLoading) {
+  useEffect(() => {
+    if (user) {
+      setIsCheckingKey(true)
+      getGeminiToken()
+        .then((data) => {
+          const hasKey = data.hasToken && !!data.apiKey
+          setHasGeminiKey(hasKey)
+          if (!hasKey) {
+            setGeminiModalOpen(true)
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to check Gemini key:', err)
+          setHasGeminiKey(false)
+          setGeminiModalOpen(true)
+        })
+        .finally(() => {
+          setIsCheckingKey(false)
+        })
+    } else {
+      setHasGeminiKey(null)
+      setIsCheckingKey(false)
+    }
+  }, [user])
+
+  const handleGeminiKeySaved = () => {
+    setHasGeminiKey(true)
+    setGeminiModalOpen(false)
+  }
+
+  if (isLoading || isCheckingKey) {
     return (
       <div className="flex min-h-screen w-full items-center justify-center bg-background bg-mesh-gradient">
         <div className="text-center animate-fade-in">
@@ -82,34 +135,67 @@ function AppContent() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                {user && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9"
+                    onClick={() => setGeminiModalOpen(true)}
+                    title="API Settings"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                )}
                 <ThemeToggle />
-                
+
                 {user ? (
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="hidden sm:block text-right">
-                      <p className="text-sm font-medium text-foreground truncate max-w-[120px]">
-                        {user.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate max-w-[120px]">{user.email}</p>
-                    </div>
-                    {user.picture && (
-                      <img
-                        src={user.picture}
-                        alt={user.name}
-                        className="w-8 h-8 rounded-full border-2 border-border shadow-sm"
-                      />
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={logout}
-                      className="text-muted-foreground hover:text-foreground hidden sm:flex"
-                    >
-                      Logout
-                    </Button>
-                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="flex items-center gap-2 h-auto p-1 sm:p-2 hover:bg-accent/50"
+                      >
+                        <div className="hidden sm:block text-right mr-1">
+                          <p className="text-sm font-medium text-foreground truncate max-w-[120px]">
+                            {user.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate max-w-[120px]">
+                            {user.email}
+                          </p>
+                        </div>
+                        {user.picture ? (
+                          <img
+                            src={user.picture}
+                            alt={user.name}
+                            className="w-8 h-8 rounded-full border-2 border-border shadow-sm"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full border-2 border-border shadow-sm bg-muted flex items-center justify-center">
+                            <UserIcon className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <div className="sm:hidden px-2 py-1.5 border-b border-border mb-1">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {user.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {user.email}
+                        </p>
+                      </div>
+                      <DropdownMenuItem
+                        onClick={logout}
+                        className="text-destructive focus:text-destructive cursor-pointer"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Logout
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 ) : (
                   <div className="hidden md:block text-sm text-muted-foreground">
                     Connect Calendar
@@ -128,11 +214,18 @@ function AppContent() {
             <CalendarEvents />
           </div>
         </main>
-        
+
         <footer className="mt-8 text-center text-xs text-muted-foreground/60">
           Built with React, Tailwind CSS & shadcn/ui
         </footer>
       </div>
+
+      <GeminiKeyModal
+        open={geminiModalOpen}
+        onOpenChange={setGeminiModalOpen}
+        required={!hasGeminiKey}
+        onSaved={handleGeminiKeySaved}
+      />
     </div>
   )
 }

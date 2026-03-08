@@ -12,6 +12,7 @@ import generateWorkReport from './generateWorkReport.js'
 
 import authRoutes from './src/routes/auth.js'
 import calendarRoutes from './src/routes/calendar.js'
+import githubRoutes from './src/routes/github.js'
 import { optionalAuth } from './src/middleware/auth.js'
 import User from './src/models/User.js'
 import { getEventsForDateRange } from './src/services/calendarService.js'
@@ -51,10 +52,18 @@ app.use(express.json())
 
 app.use('/auth', authRoutes)
 app.use('/api/calendar', calendarRoutes)
+app.use('/api/github', githubRoutes)
 
-app.post('/get-repos', async (req, res) => {
+app.post('/get-repos', optionalAuth, async (req, res) => {
   try {
-    const { pat } = req.body
+    let { pat } = req.body
+
+    if (!pat && req.userId) {
+      const user = await User.findById(req.userId)
+      if (user && user.githubPat) {
+        pat = user.githubPat
+      }
+    }
 
     if (!pat) {
       return res
@@ -89,7 +98,15 @@ app.post('/get-repos', async (req, res) => {
 
 app.post('/get-report', optionalAuth, async (req, res) => {
   try {
-    const { pat, owner, repo, from, to } = req.body
+    let { pat, owner, repo, from, to } = req.body
+
+    if (!pat && req.userId) {
+      const user = await User.findById(req.userId)
+      if (user && user.githubPat) {
+        pat = user.githubPat
+      }
+    }
+
     if (!pat || !owner || !repo) {
       return res
         .status(400)
@@ -124,19 +141,25 @@ app.post('/get-report', optionalAuth, async (req, res) => {
     })
 
     let meetingsSummaries = []
+    let geminiApiKey = null
     if (req.userId) {
       try {
         const user = await User.findById(req.userId)
-        if (user && user.hasValidTokens()) {
-          const events = await getEventsForDateRange(user, from, to)
-          meetingsSummaries = events.map((e) => e.summary)
+        if (user) {
+          if (user.hasValidTokens()) {
+            const events = await getEventsForDateRange(user, from, to)
+            meetingsSummaries = events.map((e) => e.summary)
+          }
+          if (user.geminiApiKey) {
+            geminiApiKey = user.geminiApiKey
+          }
         }
       } catch (err) {
         console.error('Error fetching calendar events:', err.message)
       }
     }
 
-    const workReport = await generateWorkReport(messages, meetingsSummaries)
+    const workReport = await generateWorkReport(messages, meetingsSummaries, geminiApiKey)
     return res.json({
       data: workReport,
       rawMessages: messages,
