@@ -1,88 +1,324 @@
 # Work Report Generator
 
-This project follows a Backend (BE) and Frontend (FE) architecture to manage Google Calendar meetings and Github commit history to generate work reports.
+A modern web application that automatically generates professional work reports from GitHub commit messages and Google Calendar meetings using AI (Google Gemini).
+
+## Overview
+
+Work Report Generator streamlines the process of creating work reports by:
+- Fetching commit messages from GitHub repositories
+- Integrating Google Calendar meetings
+- Using AI to generate structured, professional reports
+- Providing a beautiful, modern UI with dark/light theme support
+
+## Tech Stack
+
+### Backend
+- **Node.js** with Express.js
+- **MongoDB** with Mongoose
+- **Google OAuth 2.0** authentication
+- **Google Calendar API** integration
+- **GitHub API** integration
+- **Google Gemini AI** for report generation
+- **JWT** for session management
+- **Encryption** for secure token storage
+
+### Frontend
+- **React 18** with TypeScript
+- **Vite** for fast development and building
+- **Tailwind CSS** for styling
+- **shadcn/ui** component library
+- **React Query** for data fetching
+- **React Hook Form** with Zod validation
+- **date-fns** for date manipulation
+
+## Features
+
+- **GitHub Integration**
+  - Fetch commits from any repository
+  - Support for date range filtering
+  - Secure PAT storage with encryption
+
+- **Google Calendar Integration**
+  - OAuth 2.0 authentication
+  - Sync upcoming meetings
+  - Include meetings in work reports
+
+- **AI-Powered Reports**
+  - Automatic categorization (completed tasks, fixes, pending)
+  - Professional language transformation
+  - Gemini API integration
+
+- **Modern UI/UX**
+  - Dark/Light theme support
+  - Glassmorphism design
+  - Responsive layout
+  - Copy to clipboard functionality
+  - Real-time updates
+
+- **Security**
+  - Encrypted token storage
+  - Secure API key management
+  - Session-based authentication
 
 ## Project Structure
 
 ```
-## Project Structure 
-├── BE/
-│ ├── getGoogleMeetings.js # Google Calendar integration
-│ ├── generateWorkReport.js # Work report generation logic
-│ ├── credentials.json # Google API credentials
-│ └── .env.example # Environment variables template for BE
-└── FE/
-    ├── src/                 # Source files
-    │ ├── components/        # React components
-    │ ├── pages/            # Page components
-    │ ├── services/         # API services
-    │ ├── utils/            # Utility functions
-    │ ├── App.js           # Main App component
-    │ └── index.js         # Entry point
-    ├── public/            # Static files
-    ├── package.json       # Dependencies and scripts
-    └── .env.example       # Environment variables template for FE
+workReport/
+├── BE/                          # Backend
+│   ├── src/
+│   │   ├── config/             # Configuration files
+│   │   │   ├── database.js     # MongoDB connection
+│   │   │   ├── passport.js     # OAuth configuration
+│   │   │   ├── jwt.js          # JWT config
+│   │   │   └── gemini.js       # Gemini AI config
+│   │   ├── controllers/        # Request handlers
+│   │   │   ├── authController.js
+│   │   │   └── calendarController.js
+│   │   ├── middleware/         # Express middleware
+│   │   │   └── auth.js         # Authentication middleware
+│   │   ├── models/             # MongoDB models
+│   │   │   └── User.js         # User schema
+│   │   ├── routes/             # API routes
+│   │   │   ├── auth.js         # Authentication routes
+│   │   │   ├── calendar.js     # Calendar routes
+│   │   │   └── github.js       # GitHub token routes
+│   │   ├── services/           # Business logic
+│   │   │   └── calendarService.js
+│   │   └── utils/              # Utility functions
+│   │       └── encryption.js   # Token encryption
+│   ├── app.js                  # Express app entry point
+│   ├── generateWorkReport.js   # Report generation logic
+│   ├── generateReportWithGemini.js  # Gemini AI integration
+│   ├── credentials.json        # Google API credentials
+│   ├── .env.example            # Environment variables template
+│   └── package.json
+│
+└── FE/                          # Frontend
+    ├── src/
+    │   ├── components/         # React components
+    │   │   ├── ui/            # shadcn/ui components
+    │   │   ├── work-report.tsx         # Report generator
+    │   │   ├── CalendarEvents.tsx      # Calendar display
+    │   │   └── GeminiKeyModal.tsx      # API key modal
+    │   ├── contexts/           # React contexts
+    │   │   ├── AuthContext.tsx         # Authentication state
+    │   │   └── ThemeContext.tsx        # Theme management
+    │   ├── services/           # API services
+    │   │   └── api.ts          # Axios API client
+    │   ├── hooks/              # Custom hooks
+    │   │   └── use-toast.ts    # Toast notifications
+    │   ├── lib/                # Utilities
+    │   │   └── utils.ts        # Helper functions
+    │   ├── App.tsx             # Main app component
+    │   ├── main.tsx            # Entry point
+    │   └── index.css           # Global styles
+    ├── public/                 # Static files
+    ├── .env.example            # Environment variables template
+    ├── vite.config.ts          # Vite configuration
+    ├── tailwind.config.js      # Tailwind configuration
+    ├── tsconfig.json           # TypeScript config
+    └── package.json
 ```
 
-## Backend (BE)
+## Installation & Setup
 
-The backend handles:
-- Fetching meetings from Google Calendar
-- Generating work reports
-- Managing Google API authentication
+### Prerequisites
+- Node.js (v16 or higher)
+- MongoDB
+- Google Cloud Console account
+- GitHub account
+- Google Gemini API key
 
-### Setup
+### Backend Setup
 
-1. Install dependencies:
-
+1. **Navigate to backend directory:**
    ```bash
    cd BE
+   ```
+
+2. **Install dependencies:**
+   ```bash
    npm install
    ```
 
-2. Configure environment variables:
-
+3. **Configure environment variables:**
    ```bash
    cp .env.example .env
    ```
-   Then, edit the `.env` file with your configuration.
+   
+   Edit `.env` with your credentials:
+   ```env
+   GOOGLE_API_KEY=your_google_api_key
+   GOOGLE_CLIENT_ID=your_google_client_id
+   GOOGLE_CLIENT_SECRET=your_google_client_secret
+   GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
+   GEMINI_API_KEY=your_gemini_api_key
+   MONGODB_URI=mongodb://localhost:27017/workreport
+   JWT_SECRET=your_jwt_secret
+   ENCRYPTION_KEY=your_32_char_encryption_key
+   FRONTEND_URL=http://localhost:5173
+   PORT=3000
+   ```
 
-3. Set up Google Calendar API:
-   - Place your Google API credentials in `credentials.json`.
-   - Enable Google Calendar API in your Google Cloud Console.
-   - Configure the necessary OAuth 2.0 scopes.
+4. **Set up Google OAuth:**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project
+   - Enable Google Calendar API
+   - Configure OAuth consent screen
+   - Create OAuth 2.0 credentials
+   - Add authorized redirect URI: `http://localhost:3000/auth/google/callback`
+   - Download credentials and save as `credentials.json` in BE folder
 
-## Frontend (FE)
+5. **Start MongoDB:**
+   ```bash
+   mongod
+   ```
 
-The frontend provides a user interface for:
-- Viewing calendar meetings
-- Managing work reports
+6. **Run the server:**
+   ```bash
+   npm run dev
+   ```
 
-### Setup
+### Frontend Setup
 
-1. Install dependencies:
-
+1. **Navigate to frontend directory:**
    ```bash
    cd FE
+   ```
+
+2. **Install dependencies:**
+   ```bash
    npm install
    ```
 
-2. Configure environment variables:
-
+3. **Configure environment variables:**
    ```bash
    cp .env.example .env
    ```
-   Then, edit the `.env` file with your configuration.
-
-3. Start the development server:
-
-   ```bash
-   npm start
+   
+   Edit `.env`:
+   ```env
+   VITE_BASE_URL=http://localhost:3000
    ```
+
+4. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+
+5. **Open in browser:**
+   Navigate to `http://localhost:5173`
+
+## Usage
+
+### First Time Setup
+
+1. **Google Authentication:**
+   - Click "Connect Google Calendar"
+   - Sign in with your Google account
+   - Grant calendar permissions
+
+2. **GitHub Token:**
+   - Generate a GitHub Personal Access Token (PAT)
+   - Required scopes: `repo` (for private repos) or `public_repo`
+   - Enter your PAT in the GitHub Token field
+   - Click "Load" to fetch your repositories
+
+3. **Gemini API Key:**
+   - Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+   - Enter it when prompted (modal appears on first login)
+   - Key is stored securely in the database
+
+### Generating Reports
+
+1. **Select Repository:**
+   - Choose from your GitHub repositories
+   - Both public and private repos (with proper PAT)
+
+2. **Choose Date Range:**
+   - Select start and end dates
+   - Commits within this range will be included
+
+3. **Generate Report:**
+   - Click "Generate Report"
+   - AI processes commits and meetings
+   - Report appears in categorized format
+
+4. **Copy Report:**
+   - Click "Copy" to copy to clipboard
+   - Paste wherever needed
+
+### Report Format
+
+Reports are structured as:
+```
+completed:
+  • Implemented new feature
+  • Attended meeting: Team standup
+  • Refactored authentication module
+
+fixes:
+  • Fixed login validation bug
+  • Resolved API timeout issue
+
+pending:
+  • Database optimization
+  • Documentation update
+```
+
+## API Endpoints
+
+### Authentication
+- `GET /auth/google` - Initiate Google OAuth
+- `GET /auth/google/callback` - OAuth callback
+- `GET /auth/me` - Get current user
+- `POST /auth/logout` - Logout user
+
+### Calendar
+- `GET /api/calendar/events` - Fetch calendar events
+- `POST /api/calendar/disconnect` - Disconnect calendar
+
+### GitHub
+- `POST /api/github/token` - Save GitHub PAT
+- `GET /api/github/token` - Get saved PAT
+- `DELETE /api/github/token` - Remove PAT
+- `POST /get-repos` - Fetch user repositories
+- `POST /get-report` - Generate work report
+
+### Gemini
+- `POST /api/github/gemini-token` - Save Gemini API key
+- `GET /api/github/gemini-token` - Get saved key
+- `DELETE /api/github/gemini-token` - Remove key
+- `POST /api/github/gemini-token/validate` - Validate key
+
+## Development
+
+### Backend Scripts
+```bash
+npm run dev      # Start development server with nodemon
+npm test         # Run tests
+npm run lint     # Run ESLint
+```
+
+### Frontend Scripts
+```bash
+npm run dev      # Start Vite dev server
+npm run build    # Build for production
+npm run preview  # Preview production build
+npm run lint     # Run ESLint
+```
+
+## Security Features
+
+- **Token Encryption:** All API tokens are encrypted before storage
+- **Secure Sessions:** JWT-based authentication with HTTP-only cookies
+- **CORS Protection:** Configured for specific origins
+- **Environment Variables:** Sensitive data stored in `.env` files
+- **OAuth 2.0:** Secure Google authentication flow
 
 ## Contributing
 
-1. Fork the repository.
+1. Fork the repository
 2. Create a feature branch:
    ```bash
    git checkout -b feature/amazing-feature
@@ -95,9 +331,57 @@ The frontend provides a user interface for:
    ```bash
    git push origin feature/amazing-feature
    ```
-5. Open a Pull Request.
+5. Open a Pull Request
+
+## Environment Variables
+
+### Backend (.env)
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `GOOGLE_API_KEY` | Google API key | Yes |
+| `GOOGLE_CLIENT_ID` | OAuth client ID | Yes |
+| `GOOGLE_CLIENT_SECRET` | OAuth client secret | Yes |
+| `GOOGLE_CALLBACK_URL` | OAuth callback URL | Yes |
+| `GEMINI_API_KEY` | Gemini API key (fallback) | No |
+| `MONGODB_URI` | MongoDB connection string | Yes |
+| `JWT_SECRET` | JWT signing secret | Yes |
+| `ENCRYPTION_KEY` | 32-char encryption key | Yes |
+| `FRONTEND_URL` | Frontend URL for CORS | Yes |
+| `PORT` | Server port | No (default: 3000) |
+
+### Frontend (.env)
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `VITE_BASE_URL` | Backend API URL | Yes |
+
+## Troubleshooting
+
+### Common Issues
+
+1. **MongoDB Connection Error:**
+   - Ensure MongoDB is running
+   - Check `MONGODB_URI` in `.env`
+
+2. **Google OAuth Error:**
+   - Verify credentials in Google Cloud Console
+   - Check redirect URI matches exactly
+   - Ensure Calendar API is enabled
+
+3. **GitHub API Rate Limit:**
+   - Use authenticated requests with PAT
+   - Higher rate limits with PAT
+
+4. **Gemini API Error:**
+   - Verify API key is valid
+   - Check API quota limits
 
 ## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
 
+## Acknowledgments
+
+- [Google Gemini AI](https://ai.google.dev/) for report generation
+- [shadcn/ui](https://ui.shadcn.com/) for beautiful components
+- [Tailwind CSS](https://tailwindcss.com/) for styling
+- [React Query](https://tanstack.com/query) for data fetching
