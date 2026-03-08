@@ -11,8 +11,20 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { getGeminiToken, saveGeminiToken, deleteGeminiToken } from '@/services/api'
-import { Loader2, Key, Trash2, ExternalLink, AlertCircle } from 'lucide-react'
+import {
+  getGeminiToken,
+  saveGeminiToken,
+  deleteGeminiToken,
+  validateGeminiToken,
+} from '@/services/api'
+import {
+  Loader2,
+  Key,
+  Trash2,
+  ExternalLink,
+  AlertCircle,
+  CheckCircle,
+} from 'lucide-react'
 
 interface GeminiKeyModalProps {
   open: boolean
@@ -21,16 +33,24 @@ interface GeminiKeyModalProps {
   onSaved?: () => void
 }
 
-export function GeminiKeyModal({ open, onOpenChange, required = false, onSaved }: GeminiKeyModalProps) {
+export function GeminiKeyModal({
+  open,
+  onOpenChange,
+  required = false,
+  onSaved,
+}: GeminiKeyModalProps) {
   const { toast } = useToast()
   const [apiKey, setApiKey] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isValidating, setIsValidating] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [hasExistingKey, setHasExistingKey] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
 
   useEffect(() => {
     if (open) {
       setIsLoading(true)
+      setValidationError(null)
       getGeminiToken()
         .then((data) => {
           if (data.hasToken && data.apiKey) {
@@ -60,8 +80,26 @@ export function GeminiKeyModal({ open, onOpenChange, required = false, onSaved }
       return
     }
 
-    setIsSaving(true)
+    setValidationError(null)
+    setIsValidating(true)
+
     try {
+      const validationResult = await validateGeminiToken(apiKey.trim())
+      if (!validationResult.valid) {
+        setValidationError(validationResult.error || 'Invalid API key')
+        toast({
+          title: 'Invalid API Key',
+          description:
+            validationResult.error ||
+            'The API key you entered is not valid. Please check and try again.',
+          variant: 'destructive',
+        })
+        setIsValidating(false)
+        return
+      }
+      setIsValidating(false)
+      setIsSaving(true)
+
       await saveGeminiToken(apiKey.trim())
       setHasExistingKey(true)
       toast({
@@ -72,21 +110,27 @@ export function GeminiKeyModal({ open, onOpenChange, required = false, onSaved }
       if (!required) {
         onOpenChange(false)
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save Gemini key:', err)
+      const message =
+        err?.response?.data?.error ||
+        err?.message ||
+        'Failed to save Gemini API key'
+      setValidationError(message)
       toast({
         title: 'Error',
-        description: 'Failed to save Gemini API key',
+        description: message,
         variant: 'destructive',
       })
     } finally {
+      setIsValidating(false)
       setIsSaving(false)
     }
   }
 
   const handleDelete = async () => {
     if (required) return
-    
+
     setIsSaving(true)
     try {
       await deleteGeminiToken()
@@ -115,9 +159,19 @@ export function GeminiKeyModal({ open, onOpenChange, required = false, onSaved }
     onOpenChange(newOpen)
   }
 
+  const handleApiKeyChange = (value: string) => {
+    setApiKey(value)
+    setValidationError(null)
+  }
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => required && !hasExistingKey && e.preventDefault()}>
+      <DialogContent
+        className="sm:max-w-md"
+        onPointerDownOutside={(e) =>
+          required && !hasExistingKey && e.preventDefault()
+        }
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Key className="h-5 w-5" />
@@ -148,17 +202,24 @@ export function GeminiKeyModal({ open, onOpenChange, required = false, onSaved }
                   type="password"
                   placeholder="AIza..."
                   value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  className="bg-background/50"
+                  onChange={(e) => handleApiKeyChange(e.target.value)}
+                  className={`bg-background/50 ${validationError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                  disabled={isValidating || isSaving}
                 />
+                {validationError && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {validationError}
+                  </p>
+                )}
               </div>
               <div className="flex items-start gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
                 <ExternalLink className="h-4 w-4 mt-0.5 flex-shrink-0" />
                 <span>
                   Get your API key from{' '}
-                  <a 
-                    href="https://aistudio.google.com/app/apikey" 
-                    target="_blank" 
+                  <a
+                    href="https://aistudio.google.com/app/apikey"
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary hover:underline"
                   >
@@ -166,10 +227,10 @@ export function GeminiKeyModal({ open, onOpenChange, required = false, onSaved }
                   </a>
                 </span>
               </div>
-              {hasExistingKey && !required && (
+              {hasExistingKey && !required && !validationError && (
                 <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
-                  API key saved
+                  <CheckCircle className="h-4 w-4" />
+                  API key saved and validated
                 </div>
               )}
             </>
@@ -180,7 +241,7 @@ export function GeminiKeyModal({ open, onOpenChange, required = false, onSaved }
             <Button
               variant="outline"
               onClick={handleDelete}
-              disabled={isSaving || isLoading}
+              disabled={isSaving || isLoading || isValidating}
               className="text-destructive hover:text-destructive hover:bg-destructive/10"
             >
               {isSaving ? (
@@ -196,18 +257,26 @@ export function GeminiKeyModal({ open, onOpenChange, required = false, onSaved }
               <Button
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={isSaving || isLoading}
+                disabled={isSaving || isLoading || isValidating}
               >
                 Cancel
               </Button>
             )}
             <Button
               onClick={handleSave}
-              disabled={isSaving || isLoading || !apiKey.trim()}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+              disabled={isSaving || isLoading || isValidating || !apiKey.trim()}
+              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white min-w-[100px]"
             >
-              {isSaving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+              {isValidating ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Validating...
+                </span>
+              ) : isSaving ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </span>
               ) : (
                 'Save'
               )}

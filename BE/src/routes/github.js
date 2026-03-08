@@ -1,6 +1,7 @@
 import express from 'express'
 import { authMiddleware } from '../middleware/auth.js'
 import User from '../models/User.js'
+import { validateGeminiKey } from '../../generateReportWithGemini.js'
 
 const router = express.Router()
 
@@ -58,6 +59,27 @@ router.delete('/token', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error removing GitHub PAT:', error)
     return res.status(500).json({ error: 'Failed to remove GitHub PAT' })
+  }
+})
+
+router.post('/gemini-token/validate', async (req, res) => {
+  try {
+    const { apiKey } = req.body
+
+    if (!apiKey || typeof apiKey !== 'string') {
+      return res.status(400).json({ valid: false, error: 'API key is required' })
+    }
+
+    const result = await validateGeminiKey(apiKey)
+    
+    if (result.valid) {
+      return res.json({ valid: true })
+    } else {
+      return res.status(400).json({ valid: false, error: result.error })
+    }
+  } catch (error) {
+    console.error('Error validating Gemini API key:', error)
+    return res.status(500).json({ valid: false, error: 'Failed to validate API key' })
   }
 })
 

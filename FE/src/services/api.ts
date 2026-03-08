@@ -97,6 +97,11 @@ export const getGeminiToken = async (): Promise<GitHubTokenResponse> => {
   return response.data
 }
 
+export const validateGeminiToken = async (apiKey: string): Promise<{ valid: boolean; error?: string }> => {
+  const response = await api.post<{ valid: boolean; error?: string }>('/api/github/gemini-token/validate', { apiKey })
+  return response.data
+}
+
 export const saveGeminiToken = async (apiKey: string): Promise<SaveTokenResponse> => {
   const response = await api.post<SaveTokenResponse>('/api/github/gemini-token', { apiKey })
   return response.data
