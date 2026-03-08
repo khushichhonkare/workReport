@@ -141,19 +141,25 @@ app.post('/get-report', optionalAuth, async (req, res) => {
     })
 
     let meetingsSummaries = []
+    let geminiApiKey = null
     if (req.userId) {
       try {
         const user = await User.findById(req.userId)
-        if (user && user.hasValidTokens()) {
-          const events = await getEventsForDateRange(user, from, to)
-          meetingsSummaries = events.map((e) => e.summary)
+        if (user) {
+          if (user.hasValidTokens()) {
+            const events = await getEventsForDateRange(user, from, to)
+            meetingsSummaries = events.map((e) => e.summary)
+          }
+          if (user.geminiApiKey) {
+            geminiApiKey = user.geminiApiKey
+          }
         }
       } catch (err) {
         console.error('Error fetching calendar events:', err.message)
       }
     }
 
-    const workReport = await generateWorkReport(messages, meetingsSummaries)
+    const workReport = await generateWorkReport(messages, meetingsSummaries, geminiApiKey)
     return res.json({
       data: workReport,
       rawMessages: messages,

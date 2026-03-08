@@ -1,8 +1,14 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+export default async function generateReportWithGemini(prompt, apiKey) {
+  const keyToUse = apiKey || process.env.GEMINI_API_KEY
+  
+  if (!keyToUse) {
+    throw new Error('Gemini API key is required')
+  }
 
-export default async function generateReportWithGemini(prompt) {
+  const genAI = new GoogleGenerativeAI(keyToUse)
+
   try {
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',

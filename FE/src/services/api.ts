@@ -92,4 +92,19 @@ export const deleteGitHubToken = async (): Promise<SaveTokenResponse> => {
   return response.data
 }
 
+export const getGeminiToken = async (): Promise<GitHubTokenResponse> => {
+  const response = await api.get<GitHubTokenResponse>('/api/github/gemini-token')
+  return response.data
+}
+
+export const saveGeminiToken = async (apiKey: string): Promise<SaveTokenResponse> => {
+  const response = await api.post<SaveTokenResponse>('/api/github/gemini-token', { apiKey })
+  return response.data
+}
+
+export const deleteGeminiToken = async (): Promise<SaveTokenResponse> => {
+  const response = await api.delete<SaveTokenResponse>('/api/github/gemini-token')
+  return response.data
+}
+
 export default api

@@ -3,6 +3,7 @@ import generateReportWithGemini from './generateReportWithGemini.js'
 export default async function generateWorkReport(
   commits,
   meetingsSummaries = [],
+  geminiApiKey = null,
 ) {
   let meetingSection = ''
   if (meetingsSummaries && meetingsSummaries.length > 0) {
@@ -43,7 +44,7 @@ Commit messages:
 ${JSON.stringify(commits)}
 ${meetingSection}`
 
-  const huggingFaceRes = await generateReportWithGemini(`${instruction}`)
+  const huggingFaceRes = await generateReportWithGemini(`${instruction}`, geminiApiKey)
 
   return `${huggingFaceRes}`
 }
