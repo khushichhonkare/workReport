@@ -34,7 +34,16 @@ import axios, { AxiosError } from 'axios'
 import { useMutation } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
-import { CalendarIcon, Copy, X, Loader2, GitBranch, Sparkles, Check, Settings } from 'lucide-react'
+import {
+  CalendarIcon,
+  Copy,
+  X,
+  Loader2,
+  GitBranch,
+  Sparkles,
+  Check,
+  Settings,
+} from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
@@ -55,7 +64,7 @@ const fetchRepos = async (pat: string) => {
   const response = await axios.post(
     `${import.meta.env.VITE_BASE_URL}/get-repos`,
     { pat },
-    { withCredentials: true }
+    { withCredentials: true },
   )
   return response.data
 }
@@ -69,7 +78,7 @@ const fetchReport = async (params: {
   const response = await axios.post(
     `${import.meta.env.VITE_BASE_URL}/get-report`,
     params,
-    { withCredentials: true }
+    { withCredentials: true },
   )
   return response.data
 }
@@ -216,7 +225,7 @@ export function WorkReportForm({
     <div className="space-y-6">
       <Card className={`glass border-border/50 shadow-xl ${className}`}>
         <CardHeader className="pb-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mb-3">
             <div className="p-2.5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg shadow-blue-500/25">
               <GitBranch className="h-5 w-5 text-white" />
             </div>
@@ -250,9 +259,12 @@ export function WorkReportForm({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label className="text-sm font-medium">GitHub Token Required</Label>
+                  <Label className="text-sm font-medium">
+                    GitHub Token Required
+                  </Label>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Configure your GitHub Personal Access Token to fetch repositories
+                    Configure your GitHub Personal Access Token to fetch
+                    repositories
                   </p>
                 </div>
               </div>
@@ -301,9 +313,7 @@ export function WorkReportForm({
 
           {repos.length > 0 && !isLoadingRepos && (
             <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <Label className="text-sm font-medium">
-                Date Range
-              </Label>
+              <Label className="text-sm font-medium">Date Range</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -316,13 +326,16 @@ export function WorkReportForm({
                       {dateRange?.from ? (
                         dateRange.to ? (
                           <>
-                            {format(dateRange.from, 'MMM dd')} - {format(dateRange.to, 'MMM dd, yyyy')}
+                            {format(dateRange.from, 'MMM dd')} -{' '}
+                            {format(dateRange.to, 'MMM dd, yyyy')}
                           </>
                         ) : (
                           format(dateRange.from, 'MMM dd, yyyy')
                         )
                       ) : (
-                        <span className="text-muted-foreground">Select date range</span>
+                        <span className="text-muted-foreground">
+                          Select date range
+                        </span>
                       )}
                     </span>
                   </Button>
@@ -382,9 +395,7 @@ export function WorkReportForm({
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-lg">Your Work Report</CardTitle>
-                <CardDescription>
-                  Ready to copy and paste
-                </CardDescription>
+                <CardDescription>Ready to copy and paste</CardDescription>
               </div>
               <div className="flex gap-1">
                 <Tooltip>
@@ -426,7 +437,9 @@ export function WorkReportForm({
           <CardContent className="pt-4">
             <Textarea
               value={workReport}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setWorkReport(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setWorkReport(e.target.value)
+              }
               className="w-full min-h-[200px] bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/25 rounded-lg p-4 text-sm font-mono resize-none transition-all"
               placeholder="Your generated report will appear here..."
             />

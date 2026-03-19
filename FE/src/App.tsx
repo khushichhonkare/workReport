@@ -1,14 +1,13 @@
 import { WorkReportForm } from './components/work-report'
 import { CalendarEvents } from './components/CalendarEvents'
 import { useState, useEffect } from 'react'
-import { GeminiKeyModal } from './components/GeminiKeyModal'
 import { SettingsModal } from './components/SettingsModal'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/toaster'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { getGeminiToken } from '@/services/api'
+import { getGeminiToken, getGitHubToken } from '@/services/api'
 import {
   Loader2,
   Moon,
@@ -25,6 +24,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { LoginScreen } from '@/components/LoginScreen'
+import { SetupScreen } from '@/components/SetupScreen'
 
 const queryClient = new QueryClient()
 
@@ -70,50 +71,62 @@ function ThemeToggle() {
   )
 }
 
+interface TokenStatus {
+  hasGeminiKey: boolean | null
+  hasGithubPat: boolean | null
+  isChecking: boolean
+}
+
 function AppContent() {
   const { user, isLoading, logout } = useAuth()
-  const [geminiModalOpen, setGeminiModalOpen] = useState(false)
   const [settingsModalOpen, setSettingsModalOpen] = useState(false)
-  const [hasGeminiKey, setHasGeminiKey] = useState<boolean | null>(null)
-  const [isCheckingKey, setIsCheckingKey] = useState(true)
+  const [tokenStatus, setTokenStatus] = useState<TokenStatus>({
+    hasGeminiKey: null,
+    hasGithubPat: null,
+    isChecking: true,
+  })
 
   useEffect(() => {
     if (user) {
-      setIsCheckingKey(true)
-      getGeminiToken()
-        .then((data) => {
-          const hasKey = data.hasToken && !!data.apiKey
-          setHasGeminiKey(hasKey)
-          if (!hasKey) {
-            setGeminiModalOpen(true)
-          }
+      setTokenStatus((prev) => ({ ...prev, isChecking: true }))
+      Promise.all([getGeminiToken(), getGitHubToken()])
+        .then(([geminiData, githubData]) => {
+          setTokenStatus({
+            hasGeminiKey: geminiData.hasToken && !!geminiData.apiKey,
+            hasGithubPat: githubData.hasToken && !!githubData.pat,
+            isChecking: false,
+          })
         })
         .catch((err) => {
-          console.error('Failed to check Gemini key:', err)
-          setHasGeminiKey(false)
-          setGeminiModalOpen(true)
-        })
-        .finally(() => {
-          setIsCheckingKey(false)
+          console.error('Failed to check tokens:', err)
+          setTokenStatus({
+            hasGeminiKey: false,
+            hasGithubPat: false,
+            isChecking: false,
+          })
         })
     } else {
-      setHasGeminiKey(null)
-      setIsCheckingKey(false)
+      setTokenStatus({
+        hasGeminiKey: null,
+        hasGithubPat: null,
+        isChecking: false,
+      })
     }
   }, [user])
 
-  const handleGeminiKeySaved = () => {
-    setHasGeminiKey(true)
-    setGeminiModalOpen(false)
+  const handleSetupComplete = () => {
+    setTokenStatus({
+      hasGeminiKey: true,
+      hasGithubPat: true,
+      isChecking: false,
+    })
   }
 
   const handleSettingsSaved = () => {
-    handleGeminiKeySaved()
-    // Refresh the page to reload repos with new token
     window.location.reload()
   }
 
-  if (isLoading || isCheckingKey) {
+  if (isLoading || tokenStatus.isChecking) {
     return (
       <div className="flex min-h-screen w-full items-center justify-center bg-background bg-mesh-gradient">
         <div className="text-center animate-fade-in">
@@ -122,6 +135,14 @@ function AppContent() {
         </div>
       </div>
     )
+  }
+
+  if (!user) {
+    return <LoginScreen />
+  }
+
+  if (!tokenStatus.hasGeminiKey || !tokenStatus.hasGithubPat) {
+    return <SetupScreen onComplete={handleSetupComplete} />
   }
 
   return (
@@ -145,70 +166,62 @@ function AppContent() {
               </div>
 
               <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                {user && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9"
-                    onClick={() => setSettingsModalOpen(true)}
-                    title="Settings"
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={() => setSettingsModalOpen(true)}
+                  title="Settings"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
                 <ThemeToggle />
 
-                {user ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="flex items-center gap-2 h-auto p-1 sm:p-2 hover:bg-accent/50"
-                      >
-                        <div className="hidden sm:block text-right mr-1">
-                          <p className="text-sm font-medium text-foreground truncate max-w-[120px]">
-                            {user.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate max-w-[120px]">
-                            {user.email}
-                          </p>
-                        </div>
-                        {user.picture ? (
-                          <img
-                            src={user.picture}
-                            alt={user.name}
-                            className="w-8 h-8 rounded-full border-2 border-border shadow-sm"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full border-2 border-border shadow-sm bg-muted flex items-center justify-center">
-                            <UserIcon className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        )}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <div className="sm:hidden px-2 py-1.5 border-b border-border mb-1">
-                        <p className="text-sm font-medium text-foreground truncate">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="flex items-center gap-2 h-auto p-1 sm:p-2 hover:bg-accent/50"
+                    >
+                      <div className="hidden sm:block text-right mr-1">
+                        <p className="text-sm font-medium text-foreground truncate max-w-[120px]">
                           {user.name}
                         </p>
-                        <p className="text-xs text-muted-foreground truncate">
+                        <p className="text-xs text-muted-foreground truncate max-w-[120px]">
                           {user.email}
                         </p>
                       </div>
-                      <DropdownMenuItem
-                        onClick={logout}
-                        className="text-destructive focus:text-destructive cursor-pointer"
-                      >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Logout
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <div className="hidden md:block text-sm text-muted-foreground">
-                    Connect Calendar
-                  </div>
-                )}
+                      {user.picture ? (
+                        <img
+                          src={user.picture}
+                          alt={user.name}
+                          className="w-8 h-8 rounded-full border-2 border-border shadow-sm"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full border-2 border-border shadow-sm bg-muted flex items-center justify-center">
+                          <UserIcon className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <div className="sm:hidden px-2 py-1.5 border-b border-border mb-1">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {user.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {user.email}
+                      </p>
+                    </div>
+                    <DropdownMenuItem
+                      onClick={logout}
+                      className="text-destructive focus:text-destructive cursor-pointer"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
@@ -227,13 +240,6 @@ function AppContent() {
           Built with React, Tailwind CSS & shadcn/ui
         </footer>
       </div>
-
-      <GeminiKeyModal
-        open={geminiModalOpen}
-        onOpenChange={setGeminiModalOpen}
-        required={!hasGeminiKey}
-        onSaved={handleGeminiKeySaved}
-      />
 
       <SettingsModal
         open={settingsModalOpen}
