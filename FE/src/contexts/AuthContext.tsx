@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react'
 import { User, getCurrentUser, logout as apiLogout } from '../services/api'
 
 interface AuthContextType {
@@ -29,17 +35,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initAuth = async () => {
       setIsLoading(true)
-      
+
       // Check for token in URL (from OAuth callback)
       const urlParams = new URLSearchParams(window.location.search)
       const tokenFromUrl = urlParams.get('token')
-      
+
       if (tokenFromUrl) {
         // Store token and clean URL
         localStorage.setItem('auth_token', tokenFromUrl)
         window.history.replaceState({}, '', window.location.pathname)
       }
-      
+
       await refreshUser()
       setIsLoading(false)
     }
@@ -57,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiLogout()
       setUser(null)
       localStorage.removeItem('auth_token')
+      window.location.reload()
     } catch (error) {
       console.error('Logout error:', error)
     }

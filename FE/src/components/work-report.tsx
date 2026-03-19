@@ -34,18 +34,21 @@ import axios, { AxiosError } from 'axios'
 import { useMutation } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
-import { CalendarIcon, Copy, X, Loader2, GitBranch, Sparkles, Check, Github, Save } from 'lucide-react'
+import { CalendarIcon, Copy, X, Loader2, GitBranch, Sparkles, Check, Settings } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
-import { saveGitHubToken, getGitHubToken } from '@/services/api'
+import { getGitHubToken } from '@/services/api'
 
 interface Repo {
   name: string
   full_name: string
   owner: string
+}
+
+interface WorkReportFormProps {
+  onOpenSettings?: () => void
 }
 
 const fetchRepos = async (pat: string) => {
@@ -58,7 +61,6 @@ const fetchRepos = async (pat: string) => {
 }
 
 const fetchReport = async (params: {
-  pat: string
   owner: string
   repo: string
   from: string
@@ -94,11 +96,11 @@ const formatReportData = (data: Record<string, string[]>) => {
 
 export function WorkReportForm({
   className,
-}: React.HTMLAttributes<HTMLDivElement>) {
+  onOpenSettings,
+}: React.HTMLAttributes<HTMLDivElement> & WorkReportFormProps) {
   const { toast } = useToast()
   const { isConnected, user } = useAuth()
 
-  const [pat, setPat] = useState('')
   const [repos, setRepos] = useState<Repo[]>([])
   const [selectedRepo, setSelectedRepo] = useState<string>('')
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
@@ -107,30 +109,35 @@ export function WorkReportForm({
   })
   const [workReport, setWorkReport] = useState('')
   const [isLoadingRepos, setIsLoadingRepos] = useState(false)
-  const [isLoadingToken, setIsLoadingToken] = useState(false)
-  const [isSavingToken, setIsSavingToken] = useState(false)
+  const [hasGithubToken, setHasGithubToken] = useState<boolean | null>(null)
   const [repoError, setRepoError] = useState('')
   const [copied, setCopied] = useState(false)
-  const [tokenLoaded, setTokenLoaded] = useState(false)
 
   useEffect(() => {
     if (user) {
-      setIsLoadingToken(true)
-      getGitHubToken()
-        .then((data) => {
-          if (data.hasToken && data.pat) {
-            setPat(data.pat)
-            setTokenLoaded(true)
-          }
-        })
-        .catch((err) => {
-          console.error('Failed to load GitHub token:', err)
-        })
-        .finally(() => {
-          setIsLoadingToken(false)
-        })
+      checkAndLoadRepos()
     }
   }, [user])
+
+  const checkAndLoadRepos = async () => {
+    setIsLoadingRepos(true)
+    setRepoError('')
+    try {
+      const data = await getGitHubToken()
+      if (data.hasToken && data.pat) {
+        setHasGithubToken(true)
+        // Auto-load repos
+        getRepos.mutate(data.pat)
+      } else {
+        setHasGithubToken(false)
+      }
+    } catch (err) {
+      console.error('Failed to check GitHub token:', err)
+      setHasGithubToken(false)
+    } finally {
+      setIsLoadingRepos(false)
+    }
+  }
 
   const getRepos = useMutation({
     mutationFn: fetchRepos,
@@ -172,52 +179,11 @@ export function WorkReportForm({
     },
   })
 
-  const handlePatChange = (value: string) => {
-    setPat(value)
-    setRepoError('')
-    setRepos([])
-    setSelectedRepo('')
-    setTokenLoaded(false)
-  }
-
-  const handleLoadRepos = async () => {
-    if (!pat.trim()) {
-      setRepoError('Please enter a Personal Access Token')
-      return
-    }
-
-    if (user) {
-      setIsSavingToken(true)
-      try {
-        await saveGitHubToken(pat)
-        setTokenLoaded(true)
-        toast({
-          title: 'Token Saved',
-          description: 'Your GitHub token has been saved securely',
-        })
-      } catch (err) {
-        console.error('Failed to save token:', err)
-        toast({
-          title: 'Warning',
-          description: 'Could not save token to database, using session only',
-          variant: 'destructive',
-        })
-      } finally {
-        setIsSavingToken(false)
-      }
-    }
-
-    setIsLoadingRepos(true)
-    getRepos.mutate(pat, {
-      onSettled: () => setIsLoadingRepos(false),
-    })
-  }
-
   const handleGenerateReport = () => {
-    if (!pat || !selectedRepo) {
+    if (!selectedRepo) {
       toast({
         title: 'Error',
-        description: 'Please enter PAT and select a repository',
+        description: 'Please select a repository',
         variant: 'destructive',
       })
       return
@@ -225,7 +191,6 @@ export function WorkReportForm({
 
     const [owner, repo] = selectedRepo.split('/')
     getReport.mutate({
-      pat,
       owner,
       repo,
       from: dayjs(dateRange.from).format('YYYY-MM-DD'),
@@ -270,62 +235,49 @@ export function WorkReportForm({
               </span>
             </div>
           )}
-          {tokenLoaded && user && (
+          {hasGithubToken && (
             <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-              <Save className="h-4 w-4 text-blue-500" />
+              <Check className="h-4 w-4 text-blue-500" />
               <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                GitHub token saved securely
+                GitHub token configured
               </span>
             </div>
           )}
         </CardHeader>
         <Separator className="bg-border/50" />
         <CardContent className="pt-6 space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="pat" className="text-sm font-medium">
-              GitHub Personal Access Token
-              {user && <span className="text-muted-foreground ml-1">(saved securely)</span>}
-            </Label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Github className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="pat"
-                  type="password"
-                  placeholder="ghp_xxxx..."
-                  value={pat}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePatChange(e.target.value)}
-                  className="pl-10 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/25 transition-all"
-                  disabled={isLoadingToken}
-                />
-                {isLoadingToken && (
-                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-                )}
+          {!hasGithubToken && !isLoadingRepos && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm font-medium">GitHub Token Required</Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Configure your GitHub Personal Access Token to fetch repositories
+                  </p>
+                </div>
               </div>
               <Button
-                onClick={handleLoadRepos}
-                disabled={isLoadingRepos || !pat.trim() || isSavingToken}
-                className="px-6 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                onClick={() => onOpenSettings?.()}
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white"
               >
-                {isLoadingRepos || isSavingToken ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  'Load'
-                )}
+                <Settings className="mr-2 h-4 w-4" />
+                Configure GitHub Token in Settings
               </Button>
             </div>
-            {isLoadingRepos && (
-              <div className="space-y-2 mt-3">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-3/4" />
-              </div>
-            )}
-            {repoError && (
-              <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md border border-destructive/20">
-                {repoError}
-              </p>
-            )}
-          </div>
+          )}
+
+          {isLoadingRepos && (
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-3/4" />
+            </div>
+          )}
+
+          {repoError && (
+            <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md border border-destructive/20">
+              {repoError}
+            </p>
+          )}
 
           {repos.length > 0 && !isLoadingRepos && (
             <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-300">

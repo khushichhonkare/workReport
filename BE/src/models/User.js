@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema(
     tokenExpiry: {
       type: Date,
     },
-    geminiApiKey: {
+    githubPat: {
       type: String,
       default: null,
     },

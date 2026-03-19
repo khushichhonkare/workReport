@@ -2,6 +2,7 @@ import { WorkReportForm } from './components/work-report'
 import { CalendarEvents } from './components/CalendarEvents'
 import { useState, useEffect } from 'react'
 import { GeminiKeyModal } from './components/GeminiKeyModal'
+import { SettingsModal } from './components/SettingsModal'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/toaster'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
@@ -72,6 +73,7 @@ function ThemeToggle() {
 function AppContent() {
   const { user, isLoading, logout } = useAuth()
   const [geminiModalOpen, setGeminiModalOpen] = useState(false)
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false)
   const [hasGeminiKey, setHasGeminiKey] = useState<boolean | null>(null)
   const [isCheckingKey, setIsCheckingKey] = useState(true)
 
@@ -103,6 +105,12 @@ function AppContent() {
   const handleGeminiKeySaved = () => {
     setHasGeminiKey(true)
     setGeminiModalOpen(false)
+  }
+
+  const handleSettingsSaved = () => {
+    handleGeminiKeySaved()
+    // Refresh the page to reload repos with new token
+    window.location.reload()
   }
 
   if (isLoading || isCheckingKey) {
@@ -142,8 +150,8 @@ function AppContent() {
                     variant="ghost"
                     size="icon"
                     className="h-9 w-9"
-                    onClick={() => setGeminiModalOpen(true)}
-                    title="API Settings"
+                    onClick={() => setSettingsModalOpen(true)}
+                    title="Settings"
                   >
                     <Settings className="h-4 w-4" />
                   </Button>
@@ -208,7 +216,7 @@ function AppContent() {
 
         <main className="space-y-6">
           <div className="animate-slide-up">
-            <WorkReportForm />
+            <WorkReportForm onOpenSettings={() => setSettingsModalOpen(true)} />
           </div>
           <div className="animate-slide-up stagger-2">
             <CalendarEvents />
@@ -225,6 +233,12 @@ function AppContent() {
         onOpenChange={setGeminiModalOpen}
         required={!hasGeminiKey}
         onSaved={handleGeminiKeySaved}
+      />
+
+      <SettingsModal
+        open={settingsModalOpen}
+        onOpenChange={setSettingsModalOpen}
+        onSaved={handleSettingsSaved}
       />
     </div>
   )
