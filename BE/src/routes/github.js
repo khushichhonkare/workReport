@@ -2,6 +2,7 @@ import express from 'express'
 import { authMiddleware } from '../middleware/auth.js'
 import User from '../models/User.js'
 import { validateGeminiKey } from '../../generateReportWithGemini.js'
+import { encrypt, decrypt } from '../utils/encryption.js'
 
 const router = express.Router()
 
@@ -18,7 +19,7 @@ router.post('/token', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'User not found' })
     }
 
-    user.githubPat = pat
+    user.githubPat = encrypt(pat)
     await user.save()
 
     return res.json({ success: true, message: 'GitHub PAT saved successfully' })
@@ -37,7 +38,7 @@ router.get('/token', authMiddleware, async (req, res) => {
 
     return res.json({ 
       hasToken: !!user.githubPat,
-      pat: user.githubPat || null
+      pat: decrypt(user.githubPat) || null
     })
   } catch (error) {
     console.error('Error fetching GitHub PAT:', error)
@@ -96,7 +97,7 @@ router.post('/gemini-token', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'User not found' })
     }
 
-    user.geminiApiKey = apiKey
+    user.geminiApiKey = encrypt(apiKey)
     await user.save()
 
     return res.json({ success: true, message: 'Gemini API key saved successfully' })
@@ -115,7 +116,7 @@ router.get('/gemini-token', authMiddleware, async (req, res) => {
 
     return res.json({ 
       hasToken: !!user.geminiApiKey,
-      apiKey: user.geminiApiKey || null
+      apiKey: decrypt(user.geminiApiKey) || null
     })
   } catch (error) {
     console.error('Error fetching Gemini API key:', error)

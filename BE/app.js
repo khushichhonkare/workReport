@@ -16,6 +16,7 @@ import githubRoutes from './src/routes/github.js'
 import { optionalAuth } from './src/middleware/auth.js'
 import User from './src/models/User.js'
 import { getEventsForDateRange } from './src/services/calendarService.js'
+import { decrypt } from './src/utils/encryption.js'
 
 const app = express()
 
@@ -68,7 +69,7 @@ app.post('/get-repos', optionalAuth, async (req, res) => {
     if (!pat && req.userId) {
       const user = await User.findById(req.userId)
       if (user && user.githubPat) {
-        pat = user.githubPat
+        pat = decrypt(user.githubPat)
       }
     }
 
@@ -110,7 +111,7 @@ app.post('/get-report', optionalAuth, async (req, res) => {
     if (!pat && req.userId) {
       const user = await User.findById(req.userId)
       if (user && user.githubPat) {
-        pat = user.githubPat
+        pat = decrypt(user.githubPat)
       }
     }
 
@@ -158,7 +159,7 @@ app.post('/get-report', optionalAuth, async (req, res) => {
             meetingsSummaries = events.map((e) => e.summary)
           }
           if (user.geminiApiKey) {
-            geminiApiKey = user.geminiApiKey
+            geminiApiKey = decrypt(user.geminiApiKey)
           }
         }
       } catch (err) {
